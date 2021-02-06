@@ -32,6 +32,8 @@
 #include <linux/pci.h>
 #include <linux/workqueue.h>
 
+#include "hi_addr_def.h"
+
 /* Add compatibility checking for RHEL versions */
 #if defined(RHEL_RELEASE_CODE)
 #	define ACCESS_OK_2_ARGS (RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 0))
@@ -236,6 +238,7 @@
 #define dbg_irq		pr_err
 #define dbg_init	pr_err
 #define dbg_desc	pr_err
+#define dbg_event   pr_err
 #else
 /* disable debugging */
 #define dbg_io(...)
@@ -243,9 +246,11 @@
 #define dbg_perf(...)
 #define dbg_sg(...)
 #define dbg_tfr(...)
-#define dbg_irq(...)
+//#define dbg_irq(...)
+#define dbg_irq   pr_err
 #define dbg_init(...)
 #define dbg_desc(...)
+#define dbg_event pr_err
 #endif
 
 /* SECTION: Enum definitions */
@@ -556,7 +561,8 @@ struct xdma_engine {
 struct xdma_user_irq {
 	struct xdma_dev *xdev;		/* parent device */
 	u8 user_idx;			/* 0 ~ 15 */
-	u8 events_irq;			/* accumulated IRQs */
+	//u8 events_irq;			/* accumulated IRQs */
+	unsigned int events_irq;			/* accumulated IRQs */
 	spinlock_t events_lock;		/* lock to safely update events_irq */
 	wait_queue_head_t events_wq;	/* wait queue to sync waiting threads */
 	irq_handler_t handler;

@@ -105,6 +105,9 @@ static const struct pci_device_id pci_ids[] = {
 
 	{ PCI_DEVICE(0x10ee, 0x2808), },
 
+    //hipu200
+	{ PCI_DEVICE(0x19e5, 0x9028), },
+
 #ifdef INTERNAL_TESTING
 	{ PCI_DEVICE(0x1d0f, 0x1042), 0},
 #endif

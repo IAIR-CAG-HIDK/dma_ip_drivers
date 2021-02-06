@@ -1344,8 +1344,60 @@ static irqreturn_t user_irq_service(int irq, struct xdma_user_irq *user_irq)
 
 	spin_lock_irqsave(&(user_irq->events_lock), flags);
 	if (!user_irq->events_irq) {
-		user_irq->events_irq = 1;
+
+        //read reg from HPU200
+        unsigned int masked_int_status_0 = *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_MSKED_INT_STATUS_0);
+        unsigned int masked_int_status_1 = *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_MSKED_INT_STATUS_1);
+        unsigned int raw_int_status_0 = *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_RAW_INT_STATUS_0);
+        unsigned int raw_int_status_1 = *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_RAW_INT_STATUS_1);
+
+
+		dbg_irq("masked_int_status_0 0x%x\n", masked_int_status_0);
+		dbg_irq("masked_int_status_1 0x%x\n", masked_int_status_1);
+		dbg_irq("raw_int_status_0 0x%x\n", raw_int_status_0);
+		dbg_irq("raw_int_status_1 0x%x\n", raw_int_status_1);
+		user_irq->events_irq = (masked_int_status_1 & HIPU200_CORE_ALL_BIT) << 16 | (masked_int_status_0 & HIPU200_CORE_ALL_BIT);
+
 		wake_up_interruptible(&(user_irq->events_wq));
+        
+        *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_INT_MSK_0) = 0;
+        *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_INT_MSK_1) = 0;
+
+        //clear interrupt_regs
+        *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_INT_CLR_0) = masked_int_status_0;
+        *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_INT_CLR_1) = masked_int_status_1;
+
+        *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_INT_MSK_0) = 0x1fff;
+        *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_INT_MSK_1) = 0x1fff;
+
+        
+
+        masked_int_status_0 = *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_MSKED_INT_STATUS_0);
+        masked_int_status_1 = *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_MSKED_INT_STATUS_1);
+        raw_int_status_0 = *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_RAW_INT_STATUS_0);
+        raw_int_status_1 = *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+					                    HIPU200_REG_RAW_INT_STATUS_1);
+
+
+        dbg_irq("masked_int_status_0 after clear 0x%x\n", masked_int_status_0);
+		dbg_irq("masked_int_status_1 after clear 0x%x\n", masked_int_status_1);
+    	dbg_irq("raw_int_status_0 after clear 0x%x\n", raw_int_status_0);
+		dbg_irq("raw_int_status_1 after clear 0x%x\n", raw_int_status_1);
+
+
 	}
 	spin_unlock_irqrestore(&(user_irq->events_lock), flags);
 
@@ -1383,7 +1435,7 @@ static irqreturn_t xdma_isr(int irq, void *dev_id)
 
 	/* read channel interrupt requests */
 	ch_irq = read_register(&irq_regs->channel_int_request);
-	dbg_irq("ch_irq = 0x%08x\n", ch_irq);
+	dbg_irq("****** ch_irq = 0x%08x\n", ch_irq);
 
 	/*
 	 * disable all interrupts that fired; these are re-enabled individually
@@ -4118,7 +4170,7 @@ void *xdma_device_open(const char *mname, struct pci_dev *pdev, int *user_max,
 	pci_enable_capability(pdev, PCI_EXP_DEVCTL_EXT_TAG);
 
 	/* force MRRS to be 512 */
-	rv = pcie_set_readrq(pdev, 512);
+	rv = pcie_set_readrq(pdev, 256);
 	if (rv)
 		pr_info("device %s, error set PCI_EXP_DEVCTL_READRQ: %d.\n",
 			dev_name(&pdev->dev), rv);

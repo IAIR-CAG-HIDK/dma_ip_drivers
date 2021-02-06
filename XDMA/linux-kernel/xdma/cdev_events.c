@@ -47,15 +47,28 @@ static ssize_t char_events_read(struct file *file, char __user *buf,
 
 	if (*pos & 3)
 		return -EPROTO;
+    dbg_event("enter into char_events_read dev %s, xdev 0x%p, xdma idx %d.\n", dev_name(&xcdev->xdev->pdev->dev), xcdev->xdev, xcdev->xdev->idx);
+    //dbg_init("***************************enter into char_events_read\n");
 
 	/*
 	 * sleep until any interrupt events have occurred,
 	 * or a signal arrived
 	 */
-	rv = wait_event_interruptible(user_irq->events_wq,
-			user_irq->events_irq != 0);
+	//rv = wait_event_interruptible(user_irq->events_wq,
+	//		user_irq->events_irq != 0);
+    rv = wait_event_interruptible_timeout(user_irq->events_wq,
+			user_irq->events_irq != 0, 5 * HZ / 1000);
+
 	if (rv)
+    {
 		dbg_sg("wait_event_interruptible=%d\n", rv);
+    }
+    else if (rv == 0)
+    {
+        //condition evaluated to false after the timeout elapsed
+        dbg_event("wait timeout %s, xdev 0x%p, xdma idx %d.\n", dev_name(&xcdev->xdev->pdev->dev), xcdev->xdev, xcdev->xdev->idx);
+        return 0;
+    }
 
 	/* wait_event_interruptible() was interrupted by a signal */
 	if (rv == -ERESTARTSYS)
@@ -64,6 +77,7 @@ static ssize_t char_events_read(struct file *file, char __user *buf,
 	/* atomically decide which events are passed to the user */
 	spin_lock_irqsave(&user_irq->events_lock, flags);
 	events_user = user_irq->events_irq;
+    dbg_event("char_events_read return: events_irq: %x\n", user_irq->events_irq);
 	user_irq->events_irq = 0;
 	spin_unlock_irqrestore(&user_irq->events_lock, flags);
 
