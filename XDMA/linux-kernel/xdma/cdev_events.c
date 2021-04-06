@@ -21,6 +21,7 @@
 
 #include "xdma_cdev.h"
 
+//#define WAIT_WITH_TIMEOUT
 /*
  * character device file operations for events
  */
@@ -30,8 +31,8 @@ static ssize_t char_events_read(struct file *file, char __user *buf,
 	int rv;
 	struct xdma_user_irq *user_irq;
 	struct xdma_cdev *xcdev = (struct xdma_cdev *)file->private_data;
-	u32 events_user;
-	unsigned long flags;
+    u32 events_user;
+    unsigned long flags;
 
 	rv = xcdev_check(__func__, xcdev, 0);
 	if (rv < 0)
@@ -54,21 +55,21 @@ static ssize_t char_events_read(struct file *file, char __user *buf,
 	 * sleep until any interrupt events have occurred,
 	 * or a signal arrived
 	 */
-	//rv = wait_event_interruptible(user_irq->events_wq,
-	//		user_irq->events_irq != 0);
-    rv = wait_event_interruptible_timeout(user_irq->events_wq,
+#ifdef WAIT_WITH_TIMEOUT
+    rv = wait_event_interruptible_timeout(user_irq->events_wq, \
 			user_irq->events_irq != 0, 5 * HZ / 1000);
 
-	if (rv)
+    dbg_event("wait_event_interruptible_timeout %s, xdev 0x%p, xdma idx %d.\n", dev_name(&xcdev->xdev->pdev->dev), xcdev->xdev, xcdev->xdev->idx);
+    if(rv == 0)
     {
-		dbg_sg("wait_event_interruptible=%d\n", rv);
+        return rv;
     }
-    else if (rv == 0)
-    {
-        //condition evaluated to false after the timeout elapsed
-        dbg_event("wait timeout %s, xdev 0x%p, xdma idx %d.\n", dev_name(&xcdev->xdev->pdev->dev), xcdev->xdev, xcdev->xdev->idx);
-        return 0;
-    }
+#else
+    rv = wait_event_interruptible(user_irq->events_wq,         \
+			user_irq->events_irq != 0);
+
+    dbg_event("wait_event_interruptible=%d\n", rv);
+#endif
 
 	/* wait_event_interruptible() was interrupted by a signal */
 	if (rv == -ERESTARTSYS)

@@ -246,8 +246,9 @@
 #define dbg_perf(...)
 #define dbg_sg(...)
 #define dbg_tfr(...)
-//#define dbg_irq(...)
-#define dbg_irq   pr_err
+//#define dbg_tfr		pr_err
+#define dbg_irq(...)
+//#define dbg_irq   pr_err
 #define dbg_init(...)
 #define dbg_desc(...)
 #define dbg_event pr_err

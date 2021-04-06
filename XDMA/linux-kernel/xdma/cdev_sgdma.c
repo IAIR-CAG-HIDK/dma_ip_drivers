@@ -34,6 +34,7 @@
 #include "xdma_cdev.h"
 #include "cdev_sgdma.h"
 #include "xdma_thread.h"
+#include "hi_addr_def.h"
 
 /* Module Parameters */
 unsigned int h2c_timeout = 10;
@@ -358,11 +359,34 @@ static ssize_t char_sgdma_read_write(struct file *file, const char __user *buf,
 	struct xdma_dev *xdev;
 	struct xdma_engine *engine;
 	struct xdma_io_cb cb;
+    unsigned int rx_len = 0;
+    unsigned int tx_len = 0;
 
 	rv = xcdev_check(__func__, xcdev, 1);
 	if (rv < 0)
 		return rv;
 	xdev = xcdev->xdev;
+
+    //if (write)
+    //{
+    //    *(unsigned int *)(xdev->bar[xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+	//				                   HIPU200_REG_PCIE_NOC_TXLEN) = count;
+    //    tx_len = *(unsigned int *)(xdev->bar[xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+	//				                   HIPU200_REG_PCIE_NOC_TXLEN);
+
+    //    dbg_tfr("dma write HIPU200_REG_PCIE_NOC_TXLEN: 0x%x\n", tx_len);
+    //}
+    //else
+    //{
+    //    *(unsigned int *)(xdev->bar[xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+	//				                   HIPU200_REG_PCIE_NOC_RXLEN) = count;
+    //    rx_len = *(unsigned int *)(xdev->bar[xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
+	//				                   HIPU200_REG_PCIE_NOC_RXLEN);
+
+    //    dbg_tfr("dma read HIPU200_REG_PCIE_NOC_RXLEN: 0x%x\n", rx_len);
+    //}
+    
+    
 	engine = xcdev->engine;
 
 	dbg_tfr("file 0x%p, priv 0x%p, buf 0x%p,%llu, pos %llu, W %d, %s.\n",
