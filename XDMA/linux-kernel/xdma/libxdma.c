@@ -1361,8 +1361,6 @@ static irqreturn_t user_irq_service(int irq, struct xdma_user_irq *user_irq)
 		dbg_irq("raw_int_status_0 0x%x\n", raw_int_status_0);
 		dbg_irq("raw_int_status_1 0x%x\n", raw_int_status_1);
 		user_irq->events_irq = (masked_int_status_1 & HIPU200_CORE_ALL_BIT) << 16 | (masked_int_status_0 & HIPU200_CORE_ALL_BIT);
-
-		wake_up_interruptible(&(user_irq->events_wq));
         
         *(unsigned int *)(user_irq->xdev->bar[user_irq->xdev->user_bar_idx] + HIPU200_REG_BASE_OFFSET +   \
 					                    HIPU200_REG_INT_MSK_0) = 0;
@@ -1397,6 +1395,7 @@ static irqreturn_t user_irq_service(int irq, struct xdma_user_irq *user_irq)
     	dbg_irq("raw_int_status_0 after clear 0x%x\n", raw_int_status_0);
 		dbg_irq("raw_int_status_1 after clear 0x%x\n", raw_int_status_1);
 
+		wake_up_interruptible(&(user_irq->events_wq));
 
 	}
 	spin_unlock_irqrestore(&(user_irq->events_lock), flags);
